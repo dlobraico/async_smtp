@@ -20,7 +20,6 @@ Library async_smtp
   Pack:               true
   Modules:            Comm,
                       Lexer,
-                      Send_mail,
                       Smtp
   BuildDepends:       async,
                       core,

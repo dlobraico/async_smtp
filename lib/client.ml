@@ -38,7 +38,7 @@ let bind_is_ok t f =
     | Some x -> f x
     | None -> Deferred.return None
 
-let send_email reader writer ~from:sender ~to_:receivers message =
+let send_email reader writer ~sender ~receivers message =
   let exchange_str = exchange reader writer in
   let exchange command = exchange_str (Commands.to_string command) in
   Reader.read_line reader 

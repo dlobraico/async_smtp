@@ -99,12 +99,6 @@ let start_connection partner_name reader writer =
 ;;
 
 module Router = struct
-  let __UNUSED_VALUE__make_id sender receivers _email =
-    let now = Time.hash (Time.now ()) in
-    let send = String.hash sender in
-    let receivs = String.hash (List.to_string ~f:String.to_string receivers) in
-    (Int.to_string now) ^ (Int.to_string send) ^ (Int.to_string receivs)
-
   let send_email ~host ~port ~from:sender ~to_:receivers ~id_ message =
     Log.Global.info "%s => (from:%s to:%s) at %s:%d"
                     id_ sender (List.to_string ~f:String.to_string receivers) host port;
@@ -115,7 +109,7 @@ module Router = struct
   ;;
                         
   let rewrite rules msg: smtp_email list =
-    Array.fold rules ~init:[msg] 
+    List.fold rules ~init:[msg] 
                ~f:(fun msgs rule ->
                    (List.map msgs
                              ~f:(fun msg -> 
@@ -126,7 +120,7 @@ module Router = struct
   ;;
 
   let route (rules: routing_rule array) msg: (string * int) list =
-    Array.fold rules ~init:[]
+    List.fold rules ~init:[]
                ~f:(fun dests rule ->
                    match rule msg with
                    | None -> dests
@@ -134,8 +128,6 @@ module Router = struct
   ;;
 
   let rules_server rewriting_rules routing_rules =
-    let rewriting_array = Array.of_list rewriting_rules in
-    let routing_array = Array.of_list routing_rules in
     let handler address reader writer =
       let partner =
         match address with
