@@ -13,6 +13,8 @@ module Message = struct
       List.map ~f:Int.to_string [ n ; s ; r ]
       |> String.concat ~sep:""
     ;;
+      
+    let to_string = Fn.id
   end 
 
   type t = 
@@ -21,6 +23,7 @@ module Message = struct
       ; id : Id.t 
       ; email : Email_message.Email.t 
       } with sexp, fields
+  ;;
                    
   let create ~sender ~receivers ~email =
     let id = Id.create sender receivers email in

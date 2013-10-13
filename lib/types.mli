@@ -4,6 +4,7 @@ open Async.Std
 module Message : sig
   module Id : sig
     type t
+    val to_string : t -> string
   end 
 
   type t

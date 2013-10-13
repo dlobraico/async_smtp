@@ -13,17 +13,11 @@ module Client : sig
 end
 
 module Server : sig
-  val start_connection :
-    string
-    -> Reader.t
+  val start :
+    Reader.t 
     -> Writer.t
-    -> Message.t option Deferred.t
-
-  val rules_server :
-    Rule.Rewrite.t list
-    -> Rule.Route.t list
     -> Socket.Address.Inet.t
-    -> Reader.t 
-    -> Writer.t
+    -> rewrites:Rule.Rewrite.t list
+    -> routes:Rule.Route.t list
     -> unit Deferred.t
 end
