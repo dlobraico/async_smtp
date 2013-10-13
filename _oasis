@@ -20,10 +20,14 @@ Library async_smtp
   Pack:               true
   Modules:            Comm,
                       Lexer,
+                      Types,
                       Smtp
   BuildDepends:       async,
                       core,
                       core_extended,
+                      sexplib,
+                      sexplib.syntax,
+                      fieldslib.syntax,
                       email_message,
                       threads
 

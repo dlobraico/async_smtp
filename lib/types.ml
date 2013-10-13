@@ -4,7 +4,7 @@ module Octet_stream = Email_message.Octet_stream
 
 module Message = struct
   module Id = struct
-    type t = string
+    type t = string with sexp
 
     let create sender receivers email =
       let n = Time.hash (Time.now ()) in
