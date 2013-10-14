@@ -9,7 +9,7 @@ module Client : sig
     -> sender:string
     -> receivers:string list
     -> string
-    -> bool Deferred.t
+    -> unit Deferred.Or_error.t
 end
 
 module Server : sig
@@ -17,6 +17,12 @@ module Server : sig
     Reader.t 
     -> Writer.t
     -> Socket.Address.Inet.t
+    -> rewrites:Rule.Rewrite.t list
+    -> routes:Rule.Route.t list
+    -> unit Deferred.t
+
+  val start_tcp :
+    port:int
     -> rewrites:Rule.Rewrite.t list
     -> routes:Rule.Route.t list
     -> unit Deferred.t

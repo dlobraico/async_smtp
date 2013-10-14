@@ -11,7 +11,11 @@ let exchange reader writer = fun message ->
   Writer.flushed writer >>= fun () ->
   Log.Global.debug "I SAID: %s" message;
   Reader.read_line reader >>= fun s ->
-  let response = match s with `Eof -> "EOF" | `Ok a -> a in
+  let response = 
+    match s with 
+    | `Eof -> "EOF" 
+    | `Ok a -> a 
+  in
   Log.Global.debug "THEY SAID: %s" response;
   return response
 ;;
@@ -30,6 +34,7 @@ module Client = struct
                                       | `Eof -> return (List.rev strs)
                                       | `Ok s -> read_whole_reply reader (s::strs)
 
+  (* CR dlobraico: ELIMINAAAATE. *)
   let is_ok (r:string Deferred.t): unit option Deferred.t = 
     r >>= fun r ->
     match Replies.of_string r with
@@ -37,7 +42,10 @@ module Client = struct
     | (Replies.Really_bad _, _) -> return None
     | (Replies.Ok  _, _) -> return (Some ())
 
-  let exchange reader writer message =
+  (* CR dlobraico: [exchange] should return a [Reply.t
+     Deferred.Or_error.t] instead. Then instead of using [bind_is_ok]
+     we can just use [Or_error.bind] (and it will work). *)
+  let exchange reader writer message () =
     exchange reader writer message >>= fun response ->
     if Replies.is_last_line response
     then return response
@@ -45,40 +53,35 @@ module Client = struct
       read_whole_reply reader [response] >>= fun strs ->
       return (String.concat strs ~sep:"\n")
 
+  (* CR dlobraico: See above. *)
   let bind_is_ok t f =
     is_ok t 
     >>= function
       | Some x -> f x
-      | None -> Deferred.return None
+      | None -> return None
 
   let send_email reader writer ~sender ~receivers message =
     let exchange_str = exchange reader writer in
     let exchange command = exchange_str (Commands.to_string command) in
     Reader.read_line reader 
     >>= function
-      | `Eof -> return false
+      | `Eof -> return (Error (Error.of_string "Got 'Eof' on connection"))
       | `Ok resp ->
          Log.Global.debug "THEY SAID: %s" resp;
          let (>>=~) = bind_is_ok in
-         let result =
-           return resp
-           >>=~ fun () -> 
-           exchange (Commands.Hello (Unix.gethostname ()))
-           >>=~ fun () -> 
-           exchange (Commands.Sender sender)
-           >>=~ fun () -> 
-           exchange (Commands.Receiver (String.concat ~sep:" " receivers)) 
-           >>=~ fun () -> 
-           exchange Commands.Data 
-           >>=~ fun () -> 
-           exchange_str (message ^ "\n.") 
-           >>=~ fun () -> 
-           exchange Commands.Quit 
-           >>=~ fun s -> 
-           return (Some s)
-         in result >>= function
-                     | None -> return false
-                     | Some _ -> return true
+         return resp
+         >>=~ exchange (Commands.Hello (Unix.gethostname ()))
+         >>=~ exchange (Commands.Sender sender)
+         >>=~ exchange (Commands.Receiver (String.concat ~sep:" " receivers))
+         >>=~ exchange Commands.Data
+         >>=~ fun () -> 
+         exchange_str (message ^ "\n.")
+         >>=~ exchange Commands.Quit
+         >>= fun s -> 
+         return (Some s)
+         >>| function
+           | None -> Error (Error.of_string "Failed to send message")
+           | Some _ -> Ok ()
 end
 
 module Server = struct
@@ -224,7 +227,7 @@ module Server = struct
                      Pipe.write routing_w msg))
   ;;
 
-  let start r w addr ~rewrites ~routes =
+  let start addr r w ~rewrites ~routes =
     let (rewriting_r, rewriting_w) = Pipe.create () in
     let (routing_r, routing_w)     = Pipe.create () in
     let handler address reader writer =
@@ -255,6 +258,12 @@ module Server = struct
     begin
       handler addr r w
     end
+  ;;
+    
+  let start_tcp ~port ~rewrites ~routes = 
+    Tcp.Server.create (Tcp.on_port port)
+      (fun addr r w -> 
+       start addr r w ~rewrites ~routes)
   ;;
 
 end

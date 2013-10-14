@@ -69,6 +69,11 @@ module Replies : sig
   | Trasaction_failed
   | From_to_parameters_bad
 
+  (* CR dlobraico: Change to: 
+
+     type reply = ok Or_error.t
+
+   *)
   type reply = Ok of ok | Bad of not_ok | Really_bad of never_ok
   type t = reply * string
 
